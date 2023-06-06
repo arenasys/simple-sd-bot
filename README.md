@@ -4,9 +4,11 @@
 
 2. Start with `python bot.py`
 
-3. Set favourites channel and emoji threshold
+3. Set favourites channel and emoji threshold, and enable favourites for some channels.
 `^setup #favourites 3`
-
-4. Enable favourites for a specific channel
 `^add #general`
 `^add #memes`
+
+4. Enable archive channel and add archived channels.
+`$setup #archive`
+`$add #memes`

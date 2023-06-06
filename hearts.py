@@ -3,7 +3,8 @@ import db as database
 import requests
 from bs4 import BeautifulSoup
 
-EMOJIS = "❤️ 💖 ⭐ 👅 🥵 😳 😍 💦 👍 👌 😭 💢 ♥️ ❤️‍🔥 💕 💗 💓 💞 💟 😻 🫶 🖤 💙 🤎 💝 💚 😘 ❤️‍🩹 🧡 💜 🤍 💛 💘 🔥 💯 "
+EMOJIS = "❤️ 💖 ⭐ 👅 🥵 😳 😍 💦 👍 👌 😭 💢 ♥️ ❤️‍🔥 💕 💗 💓 💞 💟 😻 🫶 🖤 💙 🤎 💝 💚 😘 ❤️‍🩹 🧡 💜 🤍 💛 💘 🔥 💯 🌊 👍🏻 🍑 🙌 🎉 🐱 🍦 😻 "
+NITRO = []
 
 db = database.load('hearts.db')
 if not db:
@@ -64,6 +65,9 @@ async def on_reaction_add(client, payload):
         return
 
     guild_data = db["guilds"][str(guild_id)]
+    hearts_id = guild_data["hearts"]
+
+    await check_for_delete(client, payload)
 
     if not payload.channel_id in guild_data["channels"]:
         return
@@ -77,6 +81,30 @@ async def on_reaction_add(client, payload):
 
     await check_for_reacts(client, message)
 
+async def check_for_delete(client, payload):
+    if str(payload.emoji) != "❌":
+        return
+
+    guild_id = payload.guild_id
+    guild_data = db["guilds"][str(guild_id)]
+    hearts_id = guild_data["hearts"]
+    hearts = client.get_guild(guild_id).get_channel(hearts_id)
+
+    if payload.channel_id != hearts_id:
+        return
+
+    message = await hearts.fetch_message(payload.message_id)
+    embed = message.embeds
+    if not embed:
+        return
+    embed = embed[0]
+    author_id = embed.author.icon_url.split("/")[4]
+
+    if author_id != str(payload.user_id):
+        return
+
+    await message.delete()
+
 async def check_for_reacts(client, message):
     guild_data = db["guilds"][str(message.guild.id)]
 
@@ -88,7 +116,8 @@ async def check_for_reacts(client, message):
 
     total = []
     for r in message.reactions:
-        if not str(r.emoji) + " " in EMOJIS:
+        valid = str(r.emoji) + " " in EMOJIS or getattr(r.emoji, "name", "") in NITRO
+        if not valid:
             continue
         total += [user.id async for user in r.users()]
     total = len(set(total))
